@@ -22,6 +22,7 @@ import org.gradle.process.JavaForkOptions;
 import org.gradle.util.Path;
 
 import java.io.File;
+import java.util.Map;
 import java.util.Set;
 
 public class JvmTestExecutionSpec implements TestExecutionSpec {
@@ -36,8 +37,9 @@ public class JvmTestExecutionSpec implements TestExecutionSpec {
     private final JavaForkOptions javaForkOptions;
     private final int maxParallelForks;
     private final Set<String> previousFailedTestClasses;
+    private final Map<String, Long> previousTestClassDurations;
 
-    public JvmTestExecutionSpec(TestFramework testFramework, Iterable<? extends File> classpath, FileTree candidateClassFiles, boolean scanForTestClasses, FileCollection testClassesDirs, String path, Path identityPath, long forkEvery, JavaForkOptions javaForkOptions, int maxParallelForks, Set<String> previousFailedTestClasses) {
+    public JvmTestExecutionSpec(TestFramework testFramework, Iterable<? extends File> classpath, FileTree candidateClassFiles, boolean scanForTestClasses, FileCollection testClassesDirs, String path, Path identityPath, long forkEvery, JavaForkOptions javaForkOptions, int maxParallelForks, Set<String> previousFailedTestClasses, Map<String, Long> previousTestClassDurations) {
         this.testFramework = testFramework;
         this.classpath = classpath;
         this.candidateClassFiles = candidateClassFiles;
@@ -49,6 +51,7 @@ public class JvmTestExecutionSpec implements TestExecutionSpec {
         this.javaForkOptions = javaForkOptions;
         this.maxParallelForks = maxParallelForks;
         this.previousFailedTestClasses = previousFailedTestClasses;
+        this.previousTestClassDurations = previousTestClassDurations;
     }
 
     public TestFramework getTestFramework() {
@@ -93,5 +96,9 @@ public class JvmTestExecutionSpec implements TestExecutionSpec {
 
     public Set<String> getPreviousFailedTestClasses() {
         return previousFailedTestClasses;
+    }
+
+    public Map<String, Long> getPreviousTestClassDurations() {
+        return previousTestClassDurations;
     }
 }
