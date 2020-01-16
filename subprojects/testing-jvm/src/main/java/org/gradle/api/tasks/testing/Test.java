@@ -84,6 +84,7 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.io.File;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -627,25 +628,32 @@ public class Test extends AbstractTestTask implements JavaForkOptions, PatternFi
         boolean testIsModule = javaModuleDetector.isModule(modularity.getInferModulePath().get(), getTestClassesDirs());
         FileCollection classpath = javaModuleDetector.inferClasspath(testIsModule, stableClasspath);
         FileCollection modulePath = javaModuleDetector.inferModulePath(testIsModule, stableClasspath);
-        return new JvmTestExecutionSpec(getTestFramework(), classpath, modulePath, getCandidateClassFiles(), isScanForTestClasses(), getTestClassesDirs(), getPath(), getIdentityPath(), getForkEvery(), javaForkOptions, getMaxParallelForks(), getPreviousFailedTestClasses());
+
+        Set<String> previousFailedTestClasses = new HashSet<String>();
+        Map<String, Long> previousTestClassDurations = new HashMap<String, Long>();
+        initializePreviousTestClassInformation(previousFailedTestClasses, previousTestClassDurations);
+
+        return new JvmTestExecutionSpec(getTestFramework(), classpath, modulePath, getCandidateClassFiles(), isScanForTestClasses(), getTestClassesDirs(), getPath(), getIdentityPath(), getForkEvery(), javaForkOptions, getMaxParallelForks(), previousFailedTestClasses, previousTestClassDurations);
     }
 
-    private Set<String> getPreviousFailedTestClasses() {
+    /**
+     * Fills the argument collections with information about previous test runs.
+     */
+    private void initializePreviousTestClassInformation(final Set<String> previousFailedTestClasses, final Map<String, Long> previousTestClassDurations) {
         TestResultSerializer serializer = new TestResultSerializer(getBinResultsDir());
-        if (serializer.isHasResults()) {
-            final Set<String> previousFailedTestClasses = new HashSet<String>();
+        if (!serializer.isHasResults()) {
+            return;
+        }
+
             serializer.read(new Action<TestClassResult>() {
                 @Override
                 public void execute(TestClassResult testClassResult) {
                     if (testClassResult.getFailuresCount() > 0) {
                         previousFailedTestClasses.add(testClassResult.getClassName());
                     }
+                previousTestClassDurations.put(testClassResult.getClassName(), testClassResult.getDuration());
                 }
             });
-            return previousFailedTestClasses;
-        } else {
-            return Collections.emptySet();
-        }
     }
 
     @Override
@@ -1138,7 +1146,6 @@ public class Test extends AbstractTestTask implements JavaForkOptions, PatternFi
      *
      * @since 4.2
      */
-    @UsedByScanPlugin("test-distribution")
     void setTestExecuter(TestExecuter<JvmTestExecutionSpec> testExecuter) {
         this.testExecuter = testExecuter;
     }
